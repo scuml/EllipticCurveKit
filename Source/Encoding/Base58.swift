@@ -9,12 +9,13 @@
 //
 
 import BigInt
+import Foundation
 
 /// String representation of a Base58 string which is impossible to instantiatie with invalid values.
 public struct Base58String: DataConvertible, CharacterSetSpecifying, Equatable, ExpressibleByStringLiteral {
-    
+
     public static var allowedCharacters = CharacterSet.base58
-    
+
     public let value: String
     public init(validated unvalidated: String) {
         do {
@@ -47,26 +48,26 @@ public extension Base58String {
 
 // MARK: - DataInitializable
 public extension Base58String {
-    
+
     init(data: Data) {
         let bytes = data.bytes
         var x = data.unsignedBigInteger
         let alphabet = String.base58Alphabet.toData()
         let radix = BigUInt(alphabet.count)
-        
+
         var answer = [UInt8]()
         answer.reserveCapacity(bytes.count)
-        
+
         while x > 0 {
             let (quotient, modulus) = x.quotientAndRemainder(dividingBy: radix)
             answer.append(alphabet[Int(modulus)])
             x = quotient
         }
-        
+
         let prefix = Array(bytes.prefix(while: {$0 == 0})).map { _ in alphabet[0] }
         answer.append(contentsOf: prefix)
         answer.reverse()
-        
+
         self.init(validated: String(data: answer.asData))
     }
 }
@@ -74,11 +75,11 @@ public extension Base58String {
 // MARK: DataConvertible
 public extension Base58String {
     var asData: Data {
-        
+
         let alphabet = String.base58Alphabet.toData()
         let radix = BigUInt(alphabet.count)
         let byteString = [UInt8](value.utf8)
-        
+
         var answer = BigUInt(0)
         var temp = BigUInt(1)
         for character in byteString.reversed() {
@@ -124,11 +125,11 @@ public extension CharacterSetSpecifying {
     var allowedCharacters: CharacterSet {
         return Self.allowedCharacters
     }
-    
+
     static func isSupersetOfCharacters(in string: String) -> Bool {
         return allowedCharacters.isSuperset(of: CharacterSet(charactersIn: string))
     }
-    
+
     static func disallowedCharacters(in string: String) -> String? {
         for char in string {
             for unicodeScalar in char.unicodeScalars {
@@ -139,7 +140,7 @@ public extension CharacterSetSpecifying {
         }
         return nil
     }
-    
+
     static func validateCharacters(in string: String) throws -> String {
         if let disallowed = disallowedCharacters(in: string) {
             throw CharacterSetError.invalidCharacters(expectedCharacters: allowedCharacters, butGot: disallowed)
